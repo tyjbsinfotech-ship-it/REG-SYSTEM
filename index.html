@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Registration Search System</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+}
+
+/* Container */
+.container {
+    max-width: 850px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+/* Title */
+h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+}
+
+/* Search Box */
+input {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    outline: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+input::placeholder {
+    color: #cbd5e1;
+}
+
+/* Card */
+.card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 18px;
+    margin-top: 15px;
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    transition: 0.3s ease;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+/* Not Found */
+.not-found {
+    border-left: 5px solid #ef4444;
+}
+
+/* Status */
+.status {
+    margin-top: 8px;
+    font-weight: bold;
+    color: #38bdf8;
+}
+
+/* Labels */
+b {
+    color: #e2e8f0;
+}
+
+/* Small animation */
+.card {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    h2 {
+        font-size: 22px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>🚗 Registration Monitoring System</h2>
+
+    <input type="text" id="search" placeholder="Search name, engine, chassis, plate...">
+
+    <div id="results"></div>
+
+</div>
+
+<script>
+const searchInput = document.getElementById("search");
+const resultsDiv = document.getElementById("results");
+
+// 🔥 YOUR GOOGLE WEB APP URL
+const API_URL = "https://script.google.com/macros/s/AKfycbxwE3OeH2upNWF5xXXOADsed7Y-zy0x1IQ-VvNDucAD48PLFGCc25K6BR_QEwADILGufw/exec";
+
+let allData = [];
+
+async function loadData() {
+    try {
+        const response = await fetch(API_URL);
+        allData = await response.json();
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="card not-found">
+                ❌ Failed to load data
+            </div>
+        `;
+    }
+}
+
+loadData();
+
+searchInput.addEventListener("keyup", function () {
+    const query = searchInput.value.toLowerCase();
+
+    if (query.length < 2) {
+        resultsDiv.innerHTML = "";
+        return;
+    }
+
+    const filtered = allData.filter(item =>
+        (item.client_name || "").toLowerCase().includes(query) ||
+        (item.engine_no || "").toLowerCase().includes(query) ||
+        (item.chassis_no || "").toLowerCase().includes(query) ||
+        (item.plate_no || "").toLowerCase().includes(query)
+    );
+
+    resultsDiv.innerHTML = "";
+
+    if (filtered.length === 0) {
+        resultsDiv.innerHTML = `
+            <div class="card not-found">
+                ❌ NOT REGISTERED
+            </div>
+        `;
+        return;
+    }
+
+    filtered.forEach(item => {
+        resultsDiv.innerHTML += `
+            <div class="card">
+                <div><b>Client:</b> ${item.client_name}</div>
+                <div><b>Engine:</b> ${item.engine_no}</div>
+                <div><b>Chassis:</b> ${item.chassis_no}</div>
+                <div><b>Plate:</b> ${item.plate_no}</div>
+                <div><b>OR:</b> ${item.or_no}</div>
+                <div><b>CR:</b> ${item.cr_no}</div>
+                <div class="status">Status: ${item.status}</div>
+                <div><b>Branch:</b> ${item.branch}</div>
+            </div>
+        `;
+    });
+});
+</script>
+
+</body>
+</html>
