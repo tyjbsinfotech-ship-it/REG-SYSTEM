@@ -113,31 +113,30 @@ b {
 const searchInput = document.getElementById("search");
 const resultsDiv = document.getElementById("results");
 
-// 🔥 YOUR GOOGLE WEB APP URL
-const API_URL = "https://script.google.com/macros/s/AKfycbx0PmU4Q3tUVua7boclQxW6W3smKR4Z-xc9E_XKKHk2LZss_w1inG1__wzHaTqEE_JJrQ/exec";
+// 🔥 YOUR API HERE
+const API_URL = "https://script.google.com/macros/s/YOUR_ID/exec";
 
 let allData = [];
 
+// Load database ONCE
 async function loadData() {
     try {
-        const response = await fetch(API_URL);
-        allData = await response.json();
-    } catch (error) {
+        const res = await fetch(API_URL);
+        allData = await res.json();
+
+        console.log("DATA LOADED:", allData.length);
+    } catch (err) {
         resultsDiv.innerHTML = `
-            <div class="card not-found">
-                ❌ Failed to load data
-            </div>
+            <div class="card not-found">❌ Cannot load data</div>
         `;
     }
 }
 
-loadData();
+// REAL-TIME SEARCH
+function searchData(query) {
 
-searchInput.addEventListener("keyup", function () {
-    const query = searchInput.value.toLowerCase();
-
-    if (query.length < 2) {
-        resultsDiv.innerHTML = "";
+    if (!query) {
+        resultsDiv.innerHTML = `<div class="card">Start typing to search...</div>`;
         return;
     }
 
@@ -151,11 +150,7 @@ searchInput.addEventListener("keyup", function () {
     resultsDiv.innerHTML = "";
 
     if (filtered.length === 0) {
-        resultsDiv.innerHTML = `
-            <div class="card not-found">
-                ❌ NOT REGISTERED
-            </div>
-        `;
+        resultsDiv.innerHTML = `<div class="card not-found">❌ NOT REGISTERED</div>`;
         return;
     }
 
@@ -173,7 +168,15 @@ searchInput.addEventListener("keyup", function () {
             </div>
         `;
     });
+}
+
+// REAL-TIME INPUT
+searchInput.addEventListener("input", function () {
+    searchData(this.value.toLowerCase().trim());
 });
+
+// INIT
+loadData();
 </script>
 
 </body>
