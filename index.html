@@ -2,97 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Registration Search System</title>
+<title>Registration System</title>
 
 <style>
 body {
     margin: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    font-family: Arial;
+    background: #0f172a;
     color: white;
 }
 
-/* Container */
 .container {
-    max-width: 850px;
+    max-width: 900px;
     margin: auto;
-    padding: 40px 20px;
+    padding: 30px;
 }
 
-/* Title */
 h2 {
     text-align: center;
-    font-size: 28px;
-    margin-bottom: 25px;
-    letter-spacing: 1px;
 }
 
-/* Search Box */
 input {
     width: 100%;
     padding: 15px;
     font-size: 16px;
+    border-radius: 10px;
     border: none;
-    border-radius: 12px;
     outline: none;
-    background: rgba(255,255,255,0.1);
-    color: white;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
-input::placeholder {
-    color: #cbd5e1;
-}
-
-/* Card */
 .card {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 18px;
-    margin-top: 15px;
-    border-radius: 14px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    transition: 0.3s ease;
+    background: #1e293b;
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #22c55e;
 }
 
-.card:hover {
-    transform: scale(1.02);
-}
-
-/* Not Found */
 .not-found {
-    border-left: 5px solid #ef4444;
-}
-
-/* Status */
-.status {
-    margin-top: 8px;
-    font-weight: bold;
-    color: #38bdf8;
-}
-
-/* Labels */
-b {
-    color: #e2e8f0;
-}
-
-/* Small animation */
-.card {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Mobile */
-@media (max-width: 600px) {
-    h2 {
-        font-size: 22px;
-    }
+    border-left: 4px solid red;
 }
 </style>
 </head>
@@ -100,100 +48,72 @@ b {
 <body>
 
 <div class="container">
+<h2>Registration Search System</h2>
 
-    <h2> 🏍 Registration Monitoring System</h2>
+<input type="text" id="search" placeholder="Search name, engine, chassis, plate...">
 
-    <input type="text" id="search" placeholder="Search name, engine, chassis, plate...">
-
-    <div id="results"></div>
-
+<div id="results"></div>
 </div>
 
 <script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbxvTx1hFEZkHJkX2EObv6xk6gz7s13dclzRXseDgwwlurIRU0_hs6rhOPtXRRgxA4vMBg/exec";
+
 const searchInput = document.getElementById("search");
 const resultsDiv = document.getElementById("results");
 
-// 🔥 YOUR API HERE
-const API_URL = "https://script.google.com/macros/s/AKfycbzfd7aXddhlSG-T_XCq_YIjGZUvTm_VX7VQ16dO5HSNTZszUF_HgT95S0d2xrJNGwgV7Q/exec";
-
 let allData = [];
 
-// Load database ONCE
+// LOAD DATA ONCE
 async function loadData() {
     try {
         const res = await fetch(API_URL);
         allData = await res.json();
-
-        console.log("DATA LOADED:", allData.length);
     } catch (err) {
-        resultsDiv.innerHTML = `
-            <div class="card not-found">❌ Cannot load data</div>
-        `;
+        resultsDiv.innerHTML = "<div class='card not-found'>FAILED TO LOAD DATA</div>";
     }
 }
 
 // REAL-TIME SEARCH
-function searchData(query) {
+searchInput.addEventListener("input", function () {
+    let q = this.value.toLowerCase();
 
-    if (!query) {
-        resultsDiv.innerHTML = `<div class="card">Start typing to search...</div>`;
+    if (!q) {
+        resultsDiv.innerHTML = "";
         return;
     }
 
-    const q = query.toLowerCase();
-
-    // 1. EXACT MATCH FIRST
-    const exactMatches = allData.filter(item =>
-        (item.client_name || "").toLowerCase() === q ||
-        (item.engine_no || "").toLowerCase() === q ||
-        (item.chassis_no || "").toLowerCase() === q ||
-        (item.plate_no || "").toLowerCase() === q
-    );
-
-    // 2. PARTIAL MATCH
-    const partialMatches = allData.filter(item =>
+    let filtered = allData.filter(item =>
         (item.client_name || "").toLowerCase().includes(q) ||
         (item.engine_no || "").toLowerCase().includes(q) ||
         (item.chassis_no || "").toLowerCase().includes(q) ||
         (item.plate_no || "").toLowerCase().includes(q)
     );
 
-    // 3. MERGE WITHOUT DUPLICATES
-    const merged = [...exactMatches, ...partialMatches.filter(x => !exactMatches.includes(x))];
-
     resultsDiv.innerHTML = "";
 
-    if (merged.length === 0) {
-        resultsDiv.innerHTML = `<div class="card not-found">❌ NOT REGISTERED</div>`;
+    if (filtered.length === 0) {
+        resultsDiv.innerHTML = "<div class='card not-found'>NOT REGISTERED</div>";
         return;
     }
 
-    merged.forEach((item, index) => {
-
-        const isExact = exactMatches.includes(item);
-
+    filtered.forEach(item => {
         resultsDiv.innerHTML += `
-            <div class="card" style="${isExact ? 'border-left:5px solid #00ff88;' : ''}">
-                <div><b>Client:</b> ${item.client_name}</div>
-                <div><b>Engine:</b> ${item.engine_no}</div>
-                <div><b>Chassis:</b> ${item.chassis_no}</div>
-                <div><b>Plate:</b> ${item.plate_no}</div>
-                <div><b>OR:</b> ${item.or_no}</div>
-                <div><b>CR:</b> ${item.cr_no}</div>
-                <div class="status">Status: ${item.status}</div>
-                <div><b>Branch:</b> ${item.branch}</div>
-            </div>
-        `;
+        <div class="card">
+            <b>Client:</b> ${item.client_name}<br>
+            <b>Engine:</b> ${item.engine_no}<br>
+            <b>Chassis:</b> ${item.chassis_no}<br>
+            <b>Plate:</b> ${item.plate_no}<br>
+            <b>OR:</b> ${item.or_no}<br>
+            <b>CR:</b> ${item.cr_no}<br>
+            <b>Status:</b> ${item.status}<br>
+            <b>Branch:</b> ${item.branch}
+        </div>`;
     });
-}
-
-// REAL-TIME INPUT
-searchInput.addEventListener("input", function () {
-    searchData(this.value.toLowerCase().trim());
 });
 
-// INIT
 loadData();
+
 </script>
 
 </body>
