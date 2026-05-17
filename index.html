@@ -57,59 +57,96 @@ input {
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxvTx1hFEZkHJkX2EObv6xk6gz7s13dclzRXseDgwwlurIRU0_hs6rhOPtXRRgxA4vMBg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyNkdhLtycF9rV9YdS_iano3mW-rNKsjqGXKXtgUNw_Xo8YbT_1IFr8BHsubGiUr8RRhQ/exec";
 
 const searchInput = document.getElementById("search");
 const resultsDiv = document.getElementById("results");
 
 let allData = [];
+let isLoaded = false;
 
 // LOAD DATA ONCE
 async function loadData() {
     try {
-        const res = await fetch(API_URL);
-        allData = await res.json();
+        resultsDiv.innerHTML = "<div class='card'>Loading data...</div>";
+
+        const res = await fetch(API_URL + "?t=" + new Date().getTime()); // cache buster
+        const data = await res.json();
+
+        allData = Array.isArray(data) ? data : [];
+        isLoaded = true;
+
+        resultsDiv.innerHTML = "<div class='card'>Data loaded. You can now search.</div>";
+
     } catch (err) {
+        console.error(err);
         resultsDiv.innerHTML = "<div class='card not-found'>FAILED TO LOAD DATA</div>";
     }
 }
 
-// REAL-TIME SEARCH
-searchInput.addEventListener("input", function () {
-    let q = this.value.toLowerCase();
+// IMPROVED SEARCH FUNCTION
+function runSearch(query) {
+    if (!isLoaded) return;
 
-    if (!q) {
+    const q = query.trim().toLowerCase();
+
+    if (q.length === 0) {
         resultsDiv.innerHTML = "";
         return;
     }
 
-    let filtered = allData.filter(item =>
-        (item.client_name || "").toLowerCase().includes(q) ||
-        (item.engine_no || "").toLowerCase().includes(q) ||
-        (item.chassis_no || "").toLowerCase().includes(q) ||
-        (item.plate_no || "").toLowerCase().includes(q)
-    );
+    const filtered = allData.filter(item => {
+        return (
+            String(item.client_name || "").toLowerCase().includes(q) ||
+            String(item.engine_no || "").toLowerCase().includes(q) ||
+            String(item.chassis_no || "").toLowerCase().includes(q) ||
+            String(item.plate_no || "").toLowerCase().includes(q) ||
+            String(item.or_no || "").toLowerCase().includes(q) ||
+            String(item.cr_no || "").toLowerCase().includes(q) ||
+            String(item.branch || "").toLowerCase().includes(q)
+        );
+    });
 
+    renderResults(filtered);
+}
+
+// RENDER FUNCTION (FIXED: no overwrite bugs)
+function renderResults(data) {
     resultsDiv.innerHTML = "";
 
-    if (filtered.length === 0) {
+    if (!data || data.length === 0) {
         resultsDiv.innerHTML = "<div class='card not-found'>NOT REGISTERED</div>";
         return;
     }
 
-    filtered.forEach(item => {
-        resultsDiv.innerHTML += `
+    let html = "";
+
+    data.forEach(item => {
+        html += `
         <div class="card">
-            <b>Client:</b> ${item.client_name}<br>
-            <b>Engine:</b> ${item.engine_no}<br>
-            <b>Chassis:</b> ${item.chassis_no}<br>
-            <b>Plate:</b> ${item.plate_no}<br>
-            <b>OR:</b> ${item.or_no}<br>
-            <b>CR:</b> ${item.cr_no}<br>
-            <b>Status:</b> ${item.status}<br>
-            <b>Branch:</b> ${item.branch}
+            <b>Client:</b> ${item.client_name || ""}<br>
+            <b>Engine:</b> ${item.engine_no || ""}<br>
+            <b>Chassis:</b> ${item.chassis_no || ""}<br>
+            <b>Plate:</b> ${item.plate_no || ""}<br>
+            <b>OR:</b> ${item.or_no || ""}<br>
+            <b>CR:</b> ${item.cr_no || ""}<br>
+            <b>Status:</b> ${item.status || ""}<br>
+            <b>Branch:</b> ${item.branch || ""}
         </div>`;
     });
+
+    resultsDiv.innerHTML = html;
+}
+
+// INPUT EVENT (DEBOUNCED FIX)
+let timer;
+
+searchInput.addEventListener("input", function () {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+        runSearch(this.value);
+    }, 150); // prevents lag when typing
 });
 
 loadData();
