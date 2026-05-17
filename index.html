@@ -140,23 +140,40 @@ function searchData(query) {
         return;
     }
 
-    const filtered = allData.filter(item =>
-        (item.client_name || "").toLowerCase().includes(query) ||
-        (item.engine_no || "").toLowerCase().includes(query) ||
-        (item.chassis_no || "").toLowerCase().includes(query) ||
-        (item.plate_no || "").toLowerCase().includes(query)
+    const q = query.toLowerCase();
+
+    // 1. EXACT MATCH FIRST
+    const exactMatches = allData.filter(item =>
+        (item.client_name || "").toLowerCase() === q ||
+        (item.engine_no || "").toLowerCase() === q ||
+        (item.chassis_no || "").toLowerCase() === q ||
+        (item.plate_no || "").toLowerCase() === q
     );
+
+    // 2. PARTIAL MATCH
+    const partialMatches = allData.filter(item =>
+        (item.client_name || "").toLowerCase().includes(q) ||
+        (item.engine_no || "").toLowerCase().includes(q) ||
+        (item.chassis_no || "").toLowerCase().includes(q) ||
+        (item.plate_no || "").toLowerCase().includes(q)
+    );
+
+    // 3. MERGE WITHOUT DUPLICATES
+    const merged = [...exactMatches, ...partialMatches.filter(x => !exactMatches.includes(x))];
 
     resultsDiv.innerHTML = "";
 
-    if (filtered.length === 0) {
+    if (merged.length === 0) {
         resultsDiv.innerHTML = `<div class="card not-found">❌ NOT REGISTERED</div>`;
         return;
     }
 
-    filtered.forEach(item => {
+    merged.forEach((item, index) => {
+
+        const isExact = exactMatches.includes(item);
+
         resultsDiv.innerHTML += `
-            <div class="card">
+            <div class="card" style="${isExact ? 'border-left:5px solid #00ff88;' : ''}">
                 <div><b>Client:</b> ${item.client_name}</div>
                 <div><b>Engine:</b> ${item.engine_no}</div>
                 <div><b>Chassis:</b> ${item.chassis_no}</div>
